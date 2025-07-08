@@ -1,11 +1,25 @@
 #!/usr/bin/env python3
 import os
+import re
 import pickle
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from config import TARGET, CHUNK_SIZE, CHUNK_OVERLAP
+
+
+def preprocess_japanese_text(text):
+    """日本語テキストの前処理：単語途中の改行を除去"""
+    # 日本語文字（ひらがな、カタカナ、漢字）の後に改行があり、
+    # その次も日本語文字の場合は改行を削除
+    pattern = r'([ぁ-んァ-ヶー一-龠々])\n([ぁ-んァ-ヶー一-龠々])'
+    text = re.sub(pattern, r'\1\2', text)
+    
+    # 連続する改行は保持（段落の区切り）
+    text = re.sub(r'\n\n+', '\n\n', text)
+    
+    return text
 
 
 def main():
@@ -18,6 +32,8 @@ def main():
         print(f"Reading {txt_file}...")
         with open(txt_file, "r", encoding="utf-8") as f:
             content = f.read()
+            # 日本語テキストの前処理
+            content = preprocess_japanese_text(content)
             documents.append({
                 "content": content,
                 "source": str(txt_file)
@@ -32,7 +48,8 @@ def main():
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
         length_function=len,
-        separators=["\n\n", "\n", "。", ".", " ", ""]
+        # 日本語の文章区切りを優先
+        separators=["\n\n", "。\n", "。", "、", "\n", " ", ""]
     )
     
     # すべてのドキュメントを分割
