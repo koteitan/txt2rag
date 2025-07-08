@@ -3,7 +3,7 @@ import os
 import sys
 import pickle
 from pathlib import Path
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from config import TARGET
 
 
